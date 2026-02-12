@@ -10,14 +10,18 @@ class Notifier:
     def __init__(self, config_path="config.json"):
         self.config = load_config(config_path)
 
-    def send_telegram(self, message):
+    def send_telegram(self, message, target_chat_id=None):
         tg_conf = self.config.get("telegram", {})
         token = tg_conf.get("bot_token")
         
-        # Support both single 'chat_id' (legacy) and list 'chat_ids'
-        chat_ids = tg_conf.get("chat_ids", [])
-        if not chat_ids and "chat_id" in tg_conf:
-            chat_ids = [tg_conf["chat_id"]]
+        # Determine recipients: specific target OR all authorized in config
+        if target_chat_id:
+            chat_ids = [target_chat_id]
+        else:
+            # Broadcast to all
+            chat_ids = tg_conf.get("chat_ids", [])
+            if not chat_ids and "chat_id" in tg_conf:
+                chat_ids = [tg_conf["chat_id"]]
 
         if not token or not chat_ids or "YOUR_" in token:
             logger.warning("Telegram credentials not configured.")

@@ -208,6 +208,21 @@ elif page == "⚙️ Bot Manager":
         st.warning("⚠️ No recipients configured.")
             
     st.divider()
+
+    # User Database View
+    st.subheader("👥 User Watchlists (Database)")
+    try:
+        from utils.user_manager import UserManager
+        um = UserManager()
+        all_users = um.get_all_users()
+        if all_users:
+            st.json(all_users)
+        else:
+            st.info("No personal watchlists active (users are on Global list).")
+    except Exception as e:
+        st.error(f"Could not load User DB: {e}")
+    
+    st.divider()
     
     # Token Status
     if config.get("telegram", {}).get("bot_token"):

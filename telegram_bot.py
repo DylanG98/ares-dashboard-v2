@@ -28,18 +28,67 @@ def is_authorized(update: Update) -> bool:
     user_id = str(update.effective_user.id)
     return user_id in get_authorized_ids()
 
+from utils.user_manager import UserManager
+
+# Initialize User Manager
+user_manager = UserManager()
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_authorized(update):
         await update.message.reply_text("⛔ Unauthorized access.")
         return
     await update.message.reply_text(
-        "🤖 **A.R.E.S. Online**\n\n"
-        "Commands:\n"
-        "/price <TICKER> - Fast snapshot\n"
-        "/analyze <TICKER> - Full Report (HTML)\n"
-        "/help - Show this menu",
+        "🤖 **A.R.E.S. 2.0 Online**\n\n"
+        "**Market Data:**\n"
+        "/price <TICKER> - Snapshot\n"
+        "/analyze <TICKER> - Full Report\n\n"
+        "**My Watchlist:**\n"
+        "/track <TICKER> - Add to favorites\n"
+        "/untrack <TICKER> - Remove\n"
+        "/watchlist - Show my list",
         parse_mode="Markdown"
     )
+
+async def track(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_authorized(update): return
+    if not context.args:
+        await update.message.reply_text("⚠️ Usage: /track <TICKER>")
+        return
+    
+    ticker = context.args[0].upper()
+    user_id = str(update.effective_user.id)
+    
+    if user_manager.add_ticker(user_id, ticker):
+        await update.message.reply_text(f"✅ Added **{ticker}** to your watchlist.", parse_mode="Markdown")
+    else:
+        await update.message.reply_text(f"ℹ️ **{ticker}** is already in your watchlist.", parse_mode="Markdown")
+
+async def untrack(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_authorized(update): return
+    if not context.args:
+        await update.message.reply_text("⚠️ Usage: /untrack <TICKER>")
+        return
+    
+    ticker = context.args[0].upper()
+    user_id = str(update.effective_user.id)
+    
+    if user_manager.remove_ticker(user_id, ticker):
+        await update.message.reply_text(f"🗑️ Removed **{ticker}**.", parse_mode="Markdown")
+    else:
+        await update.message.reply_text(f"⚠️ **{ticker}** was not found in your watchlist.", parse_mode="Markdown")
+
+async def watchlist(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_authorized(update): return
+    
+    user_id = str(update.effective_user.id)
+    tickers = user_manager.get_watchlist(user_id)
+    
+    if tickers:
+        msg = "📋 **Your Watchlist:**\n" + "\n".join([f"- {t}" for t in tickers])
+    else:
+        msg = "📭 Your watchlist is empty. Use `/track <TICKER>` to add one."
+        
+    await update.message.reply_text(msg, parse_mode="Markdown")
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await start(update, context)
@@ -54,16 +103,8 @@ async def price(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ticker = context.args[0].upper()
     status_msg = await update.message.reply_text(f"🔍 Checking {ticker}...")
     
-    # We use a partial run or just the coordinator but only return price? 
-    # For speed, we can just use the coordinator and extract what we need.
-    # Ideally we'd have a lighter function, but analyze_ticker is robust.
-    # Let's use analyze_ticker but suppress the slow sentiment if possible?
-    # For now, full analysis is fine, or we can just fetch data directly.
-    # To keep it "Fast", let's just use the Coordinator which is consistent.
-    
     try:
         # Run in a separate thread to not block the async event loop
-        # But analyze_ticker is synchronous.
         results = await asyncio.to_thread(analyze_ticker, ticker)
         
         if "error" in results:
@@ -101,15 +142,8 @@ async def analyze(update: Update, context: ContextTypes.DEFAULT_TYPE):
     status_msg = await update.message.reply_text(f"🕵️ Analyzing {ticker}... This may take a minute.")
 
     try:
-        # Define a callback to update the telegram message with progress? 
-        # Updating too often triggers rate limits. Let's just update once or twice.
         def progress_callback(p, text):
-            # Only update on key milestones to avoid spam/rate limit
-            if p in [30, 60, 90]: 
-                # asyncio.run_coroutine_threadsafe(status_msg.edit_text(f"⏳ {ticker}: {text}"), loop)
-                # It's hard to mix sync callback with async telegram methods here without the loop.
-                # We'll skip granular updates for now.
-                pass
+            pass
 
         results = await asyncio.to_thread(analyze_ticker, ticker, progress_callback)
 
@@ -118,15 +152,11 @@ async def analyze(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         # Generate HTML logic
-        # We need to save the HTML to send it.
-        # Use temp dir
         report_dir = "temp_dashboard"
         os.makedirs(report_dir, exist_ok=True)
         html_path = os.path.join(report_dir, f"{ticker}_REPORT.html")
         
         reporter = HTMLReporter()
-        # Synthesis report text is markdown, needed for HTML?
-        # The HTMLReporter expects: ticker, quant_data, fundamental_data, synthesis_text, output_path
         reporter.generate_report(
             ticker, 
             results['quant'], 
@@ -180,6 +210,9 @@ def run_bot_service():
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("price", price))
     application.add_handler(CommandHandler("analyze", analyze))
+    application.add_handler(CommandHandler("track", track))
+    application.add_handler(CommandHandler("untrack", untrack))
+    application.add_handler(CommandHandler("watchlist", watchlist))
     
     logger.info("🤖 Telegram Bot Listening...")
     # allowed_updates=Update.ALL_TYPES is good practice
