@@ -176,64 +176,86 @@ elif page == "⚙️ Bot Manager":
     # Display Watchlist as a grid of removable items
     if watchlist:
         for i in range(0, len(watchlist), 4):
-            cols = st.columns(4)
-            for j, col in enumerate(cols):
-                if i + j < len(watchlist):
-                    t = watchlist[i+j]
-                    col.write(f"**{t}**")
-                    if col.button(f"🗑️ Remove {t}", key=f"del_{t}"):
-                        watchlist.remove(t)
-                        config['watchlist'] = watchlist
-                        save_config(config)
+    st.header("🤖 Bot Configuration")
+    
+    tab1, tab2 = st.tabs(["🔒 Admin", "👤 My Watchlist"])
+
+    with tab1:
+        st.subheader("📢 Broadcast List")
+    
+        # Load Config for Editing
+        config = load_config()
+        
+        # Display Current Chat IDs
+        current_ids = config.get("telegram", {}).get("chat_ids", [])
+        st.write("Authorized Chat IDs:")
+        st.code(current_ids)
+        
+        st.info("To add/remove users from the broadcast list, please edit your Streamlit Secrets or `config.json`.")
+
+        st.divider()
+
+        # User Database View (Admin)
+        st.subheader("👥 User Database (Admin)")
+        try:
+            from utils.user_manager import UserManager
+            from daily_briefing import MorningBriefing
+            
+            um = UserManager()
+            all_users = um.get_all_users()
+            if all_users:
+                st.json(all_users)
+            else:
+                st.info("No personal watchlists active.")
+                
+            if st.button("🚀 Test Morning Briefing Now"):
+                with st.spinner("Generating & Sending..."):
+                    mb = MorningBriefing()
+                    mb.generate()
+                st.success("Briefing sent! Check Telegram.")
+                
+        except Exception as e:
+            st.error(f"Could not load User DB: {e}")
+        
+    with tab2:
+        st.subheader("📝 Manage Your Watchlist")
+        
+        user_id_input = st.text_input("Enter your Telegram ID:", help="You can find this by sending any message to the bot.")
+        
+        if user_id_input:
+            um = UserManager()
+            user_watchlist = um.get_watchlist(user_id_input)
+            
+            st.write(f"**Current Watchlist for {user_id_input}:**")
+            
+            if user_watchlist:
+                # Display simply
+                st.write(", ".join(user_watchlist))
+                
+                # Management UI
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    ticker_to_remove = st.selectbox("Select ticker to remove:", user_watchlist, key="remove_box")
+                with col2:
+                    if st.button("❌ Remove"):
+                        um.remove_ticker(user_id_input, ticker_to_remove)
                         st.rerun()
-    else:
-        st.info("Watchlist is empty.")
+            else:
+                st.info("Your watchlist is empty.")
+            
+            st.divider()
+            
+            # Add Ticker
+            col3, col4 = st.columns([3, 1])
+            with col3:
+                new_ticker = st.text_input("Add New Ticker (e.g. AAPL, YPFD.BA):", key="add_box").upper()
+            with col4:
+                if st.button("➕ Add"):
+                    if new_ticker:
+                        um.add_ticker(user_id_input, new_ticker)
+                        st.success(f"Added {new_ticker}")
+                        st.rerun()
 
-    st.divider()
-    
-    # Telegram Config Display (Read-only for safety)
-    # Telegram Config Display & Management
-    st.subheader("📢 Telegram Broadcast List")
-    
-    tg_config = config.get("telegram", {})
-    chat_ids = tg_config.get("chat_ids", [])
-    
-    if isinstance(chat_ids, str):
-        chat_ids = [chat_ids]
-        
-    # Read-Only View for Security
-    if chat_ids:
-        st.write("Authorized User IDs (Read-Only):")
-        for cid in chat_ids:
-            st.code(cid)
-        st.caption("🔒 To revoke access, edit `Secrets` in Streamlit Cloud dashboard.")
-    else:
-        st.warning("⚠️ No recipients configured.")
-            
-    st.divider()
-
-    # User Database View
-    st.subheader("👥 User Watchlists (Database)")
-    try:
-        from utils.user_manager import UserManager
-        from daily_briefing import MorningBriefing
-        
-        um = UserManager()
-        all_users = um.get_all_users()
-        if all_users:
-            st.json(all_users)
-        else:
-            st.info("No personal watchlists active (users are on Global list).")
-            
-        if st.button("🚀 Test Morning Briefing Now"):
-            with st.spinner("Generating & Sending..."):
-                mb = MorningBriefing()
-                mb.generate()
-            st.success("Briefing sent! Check Telegram.")
-            
-    except Exception as e:
-        st.error(f"Could not load User DB: {e}")
-    
     st.divider()
     
     # Token Status
@@ -265,20 +287,18 @@ def start_background_services():
     def scheduler_loop():
         # Schedule Daily Briefing
         mb = MorningBriefing()
-        # Schedule at 09:00 AM everyday
-        # schedule.every().day.at("09:00").do(mb.generate)
         
-        # TEST MODE: 20:50
-        schedule.every().day.at("20:50").do(mb.generate)
+        # Schedule at 09:00 AM everyday
+        schedule.every().day.at("09:00").do(mb.generate)
         
         # Also run market scan at close? (Optional)
         # schedule.every().day.at("16:30").do(scan_markets...)
         
-        print("⏰ Scheduler Started (Test Mode: 20:50)")
+        print("⏰ Scheduler Started (09:00 AM Briefing)")
         
         while True:
             schedule.run_pending()
-            time.sleep(60) # Check every minute
+            time.sleep(30) # Check every 30s to be more precise
 
     try:
         sched_thread = threading.Thread(target=scheduler_loop, daemon=True)
