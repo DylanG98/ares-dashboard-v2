@@ -148,34 +148,6 @@ if page == "📊 Market Analyzer":
 
 # --- PAGE: BOT MANAGER ---
 elif page == "⚙️ Bot Manager":
-    st.title("⚙️ Bot Configuration")
-    st.markdown("Manage the assets that **A.R.E.S.** watches automatically every day.")
-    
-    config = load_config()
-    watchlist = config.get("watchlist", [])
-    
-    # Add New Ticker
-    c1, c2 = st.columns([3, 1])
-    with c1:
-        new_ticker = st.text_input("Add Ticker to Watchlist").upper()
-    with c2:
-        st.write("") # Spacer
-        st.write("")
-        if st.button("➕ Add"):
-            if new_ticker and new_ticker not in watchlist:
-                watchlist.append(new_ticker)
-                config['watchlist'] = watchlist
-                save_config(config)
-                st.success(f"Added {new_ticker}")
-                st.rerun()
-            elif new_ticker in watchlist:
-                st.warning("Ticker already in watchlist.")
-
-    st.write("### Current Watchlist")
-    
-    # Display Watchlist as a grid of removable items
-    if watchlist:
-        for i in range(0, len(watchlist), 4):
     st.header("🤖 Bot Configuration")
     
     tab1, tab2 = st.tabs(["🔒 Admin", "👤 My Watchlist"])
@@ -259,6 +231,7 @@ elif page == "⚙️ Bot Manager":
     st.divider()
     
     # Token Status
+    config = load_config()
     if config.get("telegram", {}).get("bot_token"):
         st.success("✅ Bot Token Configured")
     else:

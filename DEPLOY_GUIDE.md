@@ -49,6 +49,20 @@ watchlist = ["AAPL", "TSLA", "NVDA", "YPFD.BA"]
 2.  Wait 1-2 minutes while it installs libraries.
 3.  **Done!** You will get a URL like `https://ares-dashboard.streamlit.app` to share.
 
+
+## Step 5: Keep It Alive (Automation) ⏰
+Streamlit Cloud apps go to sleep if no one visits them. If the app sleeps, the **09:00 AM Scheduler will NOT run**.
+
+**Solution**: Use a free uptime monitor to "ping" your app every 5 minutes.
+1.  Go to [UptimeRobot.com](https://uptimerobot.com/) (Free).
+2.  Create a new Monitor.
+3.  Type: **HTTP(s)**.
+4.  URL: Your Streamlit App URL (e.g. `https://ares-dashboard.streamlit.app`).
+5.  Interval: **5 minutes**.
+6.  Start Monitor.
+
+**Result**: Even if your PC is off, UptimeRobot keeps the cloud server awake, ensuring your 9 AM briefing arrives.
+
 ## Troubleshooting
 *   **"ModuleNotFoundError"**: Check if `requirements.txt` includes all libraries (pandas, yfinance, etc).
 *   **"KeyError: telegram"**: You forgot to set the Secrets in Step 3.
