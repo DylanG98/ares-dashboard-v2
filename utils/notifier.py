@@ -1,9 +1,6 @@
 import requests
-import smtplib
 import json
 import os
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from utils.logger import setup_logger
 from utils.config_loader import load_config
 

@@ -111,7 +111,17 @@ def main():
     
     logger.info(f"All reports generated for {ticker}!")
 
-def generate_quant_report(ticker, quant_res):
+def generate_quant_report(ticker: str, quant_res: dict) -> str:
+    """
+    Generates a markdown report for the Quantitative Analysis results.
+
+    Args:
+        ticker (str): The stock ticker symbol.
+        quant_res (dict): Dictionary containing quantitative metrics and plot paths.
+
+    Returns:
+        str: Formatted markdown string.
+    """
     if "error" in quant_res:
         return f"# Quant Report: {ticker}\n\nError: {quant_res['error']}"
         
@@ -135,15 +145,13 @@ def generate_quant_report(ticker, quant_res):
     
     plot_path = quant_res.get('Plot Path')
     if plot_path:
-        # Resolve relative path for markdown if needed, but since html uses base64 it's fine.
-        # For markdown, we need to make sure the link works relative to the markdown file.
-        # They are in the same folder now, so we just need the basename.
         plot_basename = os.path.basename(plot_path)
         report += f"![Technical Chart]({plot_basename})\n"
     
     return report
 
-def save_report(filename, content):
+def save_report(filename: str, content: str) -> None:
+    """Writes the content strings to a file with UTF-8 encoding."""
     with open(filename, "w", encoding="utf-8") as f:
         f.write(content)
     logger.info(f"Saved: {filename}")

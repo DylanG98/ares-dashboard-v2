@@ -4,11 +4,21 @@ import json
 import os
 import time
 
+"""
+A.R.E.S. Web Dashboard
+======================
+This is the main entry point for the Streamlit web interface.
+It orchestrates the interaction between the user and the autonomous agents:
+- QuantEngine: Technical analysis and plotting.
+- Researcher: Fundamental data and news sentiment.
+- Synthesizer: Final decision making (Buy/Sell/Hold).
+
+Navigation:
+- Market Analyzer: Run ad-hoc analysis on any ticker.
+- Bot Manager: Manage the watchlist and Telegram recipients.
+"""
+
 # A.R.E.S. Components
-from agents.quant import QuantEngine
-from agents.researcher import Researcher
-from agents.synthesizer import Synthesizer
-from utils.data_loader import get_market_data
 from utils.config_loader import load_config, save_config
 
 # Page Config
@@ -35,70 +45,36 @@ st.markdown("""
 
 CONFIG_PATH = "config.json"
 
-def run_analysis(ticker):
-    """Runs the full A.R.E.S. pipeline for a single ticker."""
+from agents.coordinator import analyze_ticker
+
+def run_analysis_ui(ticker):
+    """Wrapper for analyze_ticker to handle Streamlit UI updates."""
     status_text = st.empty()
     progress_bar = st.progress(0)
     
-    try:
-        # 1. Fetch Data
-        status_text.text(f"📥 Fetching Market Data for {ticker}...")
-        df = get_market_data(ticker, period="2y", save_dir=None) # Don't save CSVs for web runs
+    def ui_callback(p, text):
+        progress_bar.progress(p)
+        status_text.text(text)
         
-        if df.empty:
-            status_text.empty()
-            st.error(f"❌ Could not find data for **{ticker}**.")
-            
-            # Argentine Ticker Heuristic
-            ba_tickers = ["YPFD", "GGAL", "PAMP", "TXAR", "ALUA", "CRES", "EDN", "CEPU", "BMA", "SUPV", "TECO2", "MIRG", "LOMA", "BYMA", "VALO", "CVH"]
-            if ticker in ba_tickers:
-                st.warning(f"💡 Did you mean **{ticker}.BA**? (Argentine stocks need the .BA suffix)")
-            else:
-                st.info("Tip: For Buenos Aires stocks, add **.BA** (e.g., YPFD.BA).")
-            return None
-
-        progress_bar.progress(25)
-        
-        # 2. Researcher & NLP
-        status_text.text(f"🕵️ Researcher Agent: Analyzing Fundamentals & News...")
-        researcher = Researcher()
-        intel = researcher.get_market_intel(ticker)
-        sentiment = researcher.get_sentiment(ticker)
-        intel['data']['sentiment'] = sentiment # Merge
-        progress_bar.progress(50)
-        
-        # 3. Quant
-        status_text.text(f"📉 Quant Agent: Calculating Technicals...")
-        # Create a temp dir for charts if needed, or handle in-memory.
-        # QuantEngine needs an output_dir to save the plot.
-        temp_dir = "temp_dashboard"
-        os.makedirs(temp_dir, exist_ok=True)
-        
-        quant = QuantEngine(ticker, df, output_dir=temp_dir)
-        quant_res = quant.analyze()
-        progress_bar.progress(75)
-        
-        # 4. Synthesis
-        status_text.text(f"⚖️ Synthesizer Agent: Deliberating...")
-        synthesizer = Synthesizer()
-        report = synthesizer.synthesize(ticker, quant_res, intel['data'])
-        analysis = synthesizer.get_signal(quant_res, intel['data'])
-        progress_bar.progress(100)
-        
-        time.sleep(0.5)
+    result = analyze_ticker(ticker, progress_callback=ui_callback)
+    
+    api_error = result.get("error")
+    if api_error:
         status_text.empty()
         progress_bar.empty()
+        st.error(f"❌ {api_error}")
         
-        return {
-            "quant": quant_res,
-            "research": intel['data'],
-            "synthesis": analysis,
-            "report_text": report
-        }
-        
-    except Exception as e:
-        status_text.error(f"Error: {str(e)}")
+        # Heuristic hint (kept in UI layer)
+        ba_tickers = ["YPFD", "GGAL", "PAMP", "TXAR", "ALUA", "CRES", "EDN", "CEPU", "BMA", "SUPV", "TECO2", "MIRG", "LOMA", "BYMA", "VALO", "CVH"]
+        if ticker in ba_tickers:
+            st.warning(f"💡 Did you mean **{ticker}.BA**?")
         return None
+        
+    time.sleep(0.5)
+    status_text.empty()
+    progress_bar.empty()
+    
+    return result
 
 # --- SIDEBAR ---
 with st.sidebar:
@@ -119,7 +95,7 @@ if page == "📊 Market Analyzer":
         analyze_btn = st.button("Run Analysis", type="primary")
         
     if analyze_btn:
-        res = run_analysis(ticker)
+        res = run_analysis_ui(ticker)
         
         if res:
             # Verdict Section
@@ -262,3 +238,28 @@ elif page == "⚙️ Bot Manager":
         st.success("✅ Bot Token Configured")
     else:
         st.error("❌ Bot Token Missing")
+
+# --- BACKGROUND BOT SERVICE ---
+@st.cache_resource
+def start_bot_background():
+    """Starts the Telegram Bot in a separate thread. Singleton via st.cache."""
+    try:
+        import threading
+        from telegram_bot import run_bot_service
+        
+        # Only start if it's not already running? 
+        # st.cache_resource ensures this is called only once per runtime session.
+        # But we need to make sure run_bot_service doesn't block the cached function or return immediately.
+        # run_bot_service() calls run_polling() which BLOCKS.
+        # So we must wrap it in a thread HERE.
+        
+        bot_thread = threading.Thread(target=run_bot_service, daemon=True)
+        bot_thread.start()
+        print("✅ Background Bot Thread Started")
+        return bot_thread
+    except Exception as e:
+        print(f"❌ Failed to start bot: {e}")
+        return None
+
+# Start the bot
+start_bot_background()

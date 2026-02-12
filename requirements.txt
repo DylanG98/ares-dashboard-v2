@@ -9,3 +9,4 @@ streamlit>=1.35.0  # Force modern Streamlit for Altair 5 support
 altair<6           # Pin Altair to avoid v6 breaking changes for now
 watchdog
 toml
+python-telegram-bot

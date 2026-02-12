@@ -1,7 +1,9 @@
 {
     "telegram": {
         "bot_token": "YOUR_BOT_TOKEN_HERE",
-        "chat_id": "YOUR_CHAT_ID_HERE"
+        "chat_ids": [
+            "YOUR_CHAT_ID_HERE"
+        ]
     },
     "email": {
         "enabled": false,
@@ -10,5 +12,12 @@
         "sender_email": "your_email@gmail.com",
         "password": "your_app_password"
     },
-    "watchlist": ["AAPL", "TSLA", "MSFT", "GOOGL", "NVDA", "YPF"]
+    "watchlist": [
+        "AAPL",
+        "TSLA",
+        "MSFT",
+        "GOOGL",
+        "NVDA",
+        "YPFD.BA"
+    ]
 }
