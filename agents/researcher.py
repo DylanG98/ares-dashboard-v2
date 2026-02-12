@@ -22,6 +22,13 @@ class Researcher:
             industry = info.get('industry', 'N/A')
             market_cap = info.get('marketCap', 0)
             
+            # Fallback for Market Cap (Fast Info)
+            if market_cap == 0:
+                try:
+                    market_cap = stock.fast_info['market_cap']
+                except:
+                    pass
+
             report += f"**Sector**: {sector} | **Industry**: {industry}\n"
             report += f"**Market Cap**: ${market_cap:,.0f}\n\n"
 

@@ -216,12 +216,21 @@ elif page == "⚙️ Bot Manager":
     st.subheader("👥 User Watchlists (Database)")
     try:
         from utils.user_manager import UserManager
+        from daily_briefing import MorningBriefing
+        
         um = UserManager()
         all_users = um.get_all_users()
         if all_users:
             st.json(all_users)
         else:
             st.info("No personal watchlists active (users are on Global list).")
+            
+        if st.button("🚀 Test Morning Briefing Now"):
+            with st.spinner("Generating & Sending..."):
+                mb = MorningBriefing()
+                mb.generate()
+            st.success("Briefing sent! Check Telegram.")
+            
     except Exception as e:
         st.error(f"Could not load User DB: {e}")
     
@@ -257,12 +266,15 @@ def start_background_services():
         # Schedule Daily Briefing
         mb = MorningBriefing()
         # Schedule at 09:00 AM everyday
-        schedule.every().day.at("09:00").do(mb.generate)
+        # schedule.every().day.at("09:00").do(mb.generate)
+        
+        # TEST MODE: 20:50
+        schedule.every().day.at("20:50").do(mb.generate)
         
         # Also run market scan at close? (Optional)
         # schedule.every().day.at("16:30").do(scan_markets...)
         
-        print("⏰ Scheduler Started (09:00 AM Briefing)")
+        print("⏰ Scheduler Started (Test Mode: 20:50)")
         
         while True:
             schedule.run_pending()
