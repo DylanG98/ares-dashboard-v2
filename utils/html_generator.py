@@ -1,0 +1,217 @@
+import base64
+import os
+
+class HTMLReporter:
+    def __init__(self):
+        self.css = """
+        <style>
+            :root {
+                --bg-color: #1a1a1a;
+                --text-color: #e0e0e0;
+                --card-bg: #2d2d2d;
+                --accent-color: #007bff;
+                --success-color: #28a745;
+                --danger-color: #dc3545;
+                --warning-color: #ffc107;
+            }
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background-color: var(--bg-color);
+                color: var(--text-color);
+                margin: 0;
+                padding: 20px;
+            }
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+            header {
+                text-align: center;
+                padding: 20px 0;
+                border-bottom: 2px solid var(--accent-color);
+                margin-bottom: 30px;
+            }
+            h1 { margin: 0; font-size: 2.5em; }
+            h2 { color: var(--accent-color); border-left: 4px solid var(--accent-color); padding-left: 10px; }
+            .badge {
+                padding: 5px 10px;
+                border-radius: 4px;
+                font-weight: bold;
+                color: #fff;
+            }
+            .bg-success { background-color: var(--success-color); }
+            .bg-danger { background-color: var(--danger-color); }
+            .bg-warning { background-color: var(--warning-color); color: #000; }
+            
+            .grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 20px;
+                margin-bottom: 30px;
+            }
+            .card {
+                background-color: var(--card-bg);
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            }
+            .card h3 { margin-top: 0; font-size: 0.9em; color: #aaa; text-transform: uppercase; }
+            .card .value { font-size: 1.8em; font-weight: bold; }
+            
+            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            th, td { padding: 12px; text-align: left; border-bottom: 1px solid #444; }
+            th { background-color: #333; }
+            
+            .chart-container {
+                background-color: var(--card-bg);
+                padding: 10px;
+                border-radius: 8px;
+                text-align: center;
+                margin-bottom: 30px;
+            }
+            img { max-width: 100%; height: auto; border-radius: 4px; }
+            
+            footer {
+                text-align: center;
+                margin-top: 50px;
+                font-size: 0.8em;
+                color: #666;
+            }
+        </style>
+        """
+
+    def generate_report(self, ticker, quant_data, researcher_data, synthesis_report, output_path):
+        # Prepare Data
+        price = quant_data.get('Last Price', 0)
+        rsi = quant_data.get('RSI (14)', 0)
+        sharpe = quant_data.get('Sharpe Ratio', 0)
+        beta = quant_data.get('Beta', 0)
+        var = quant_data.get('VaR (95%)', 0)
+        
+        market_cap = researcher_data.get('Market Cap', 0)
+        fcf = researcher_data.get('Free Cash Flow', 0)
+        debt = researcher_data.get('Total Debt', 0)
+        cash = researcher_data.get('Cash', 0)
+
+        # Extract Verdict from Synthesis Report
+        verdict = "NEUTRAL"
+        verdict_color = "bg-warning"
+        if "STRONG BUY" in synthesis_report:
+            verdict = "STRONG BUY"
+            verdict_color = "bg-success"
+        elif "BUY" in synthesis_report:
+            verdict = "BUY"
+            verdict_color = "bg-success"
+        elif "STRONG SELL" in synthesis_report:
+            verdict = "STRONG SELL"
+            verdict_color = "bg-danger"
+        elif "SELL" in synthesis_report:
+            verdict = "SELL"
+            verdict_color = "bg-danger"
+
+        # Image Embedding
+        chart_path = quant_data.get('Plot Path', '')
+        img_tag = ""
+        if chart_path and os.path.exists(chart_path):
+            with open(chart_path, "rb") as image_file:
+                encoded_string = base64.b64encode(image_file.read()).decode()
+            img_tag = f'<img src="data:image/png;base64,{encoded_string}" alt="Technical Chart">'
+
+        # HTML Structure
+        html = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>A.R.E.S. Report - {ticker}</title>
+            {self.css}
+        </head>
+        <body>
+            <div class="container">
+                <header>
+                    <h1>{ticker} Executive Report</h1>
+                    <p>Generated by A.R.E.S. (Autonomous Research & Equity System)</p>
+                    <span class="badge {verdict_color}" style="font-size: 1.2em;">VERDICT: {verdict}</span>
+                </header>
+
+                <h2>📊 Key Metrics Dashboard</h2>
+                <div class="grid">
+                    <div class="card">
+                        <h3>Last Price</h3>
+                        <div class="value">${price:.2f}</div>
+                    </div>
+                    <div class="card">
+                        <h3>RSI (14)</h3>
+                        <div class="value" style="color: {'#dc3545' if rsi > 70 or rsi < 30 else '#28a745'}">{rsi:.2f}</div>
+                    </div>
+                    <div class="card">
+                        <h3>Sharpe Ratio</h3>
+                        <div class="value">{sharpe:.2f}</div>
+                    </div>
+                    <div class="card">
+                        <h3>Beta</h3>
+                        <div class="value">{beta:.2f}</div>
+                    </div>
+                    <div class="card">
+                        <h3>VaR (95%)</h3>
+                        <div class="value" style="color: #dc3545">{var:.2%}</div>
+                    </div>
+                </div>
+
+                <h2>🏢 Fundamental Snapshot</h2>
+                <div class="grid">
+                    <div class="card">
+                        <h3>Market Cap</h3>
+                        <div class="value">${market_cap:,.0f}</div>
+                    </div>
+                    <div class="card">
+                        <h3>Free Cash Flow</h3>
+                        <div class="value" style="color: {'#28a745' if fcf > 0 else '#dc3545'}">${fcf:,.0f}</div>
+                    </div>
+                    <div class="card">
+                        <h3>Net Cash Position</h3>
+                        <div class="value" style="color: {'#28a745' if (cash - debt) > 0 else '#dc3545'}">${(cash - debt):,.0f}</div>
+                    </div>
+                </div>
+
+                <h2>📰 Market Sentiment (NLP)</h2>
+                <div class="grid">
+                    <div class="card">
+                        <h3>Mood</h3>
+                        <div class="value">{researcher_data.get('sentiment', {}).get('sentiment', 'N/A')}</div>
+                    </div>
+                    <div class="card">
+                        <h3>Polarity Score</h3>
+                        <div class="value">{researcher_data.get('sentiment', {}).get('polarity', 0):.2f}</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Top Headlines</h3>
+                    <ul style="list-style-type: none; padding: 0;">
+                        {''.join([f'<li style="margin-bottom: 5px; border-left: 3px solid #007bff; padding-left: 10px;">{h}</li>' for h in researcher_data.get('sentiment', {}).get('headlines', [])])}
+                    </ul>
+                </div>
+
+                <h2>📈 Technical Analysis</h2>
+                <div class="chart-container">
+                    {img_tag}
+                </div>
+
+                <h2>🧠 Synthesis & Rationale</h2>
+                <div class="card">
+                    <div style="font-family: monospace; white-space: pre-wrap;">{synthesis_report}</div>
+                </div>
+
+                <footer>
+                    &copy; 2026 A.R.E.S. System. Confidential.
+                </footer>
+            </div>
+        </body>
+        </html>
+        """
+
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(html)
+        
+        return output_path
