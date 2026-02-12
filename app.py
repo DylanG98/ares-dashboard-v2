@@ -195,39 +195,15 @@ elif page == "⚙️ Bot Manager":
     tg_config = config.get("telegram", {})
     chat_ids = tg_config.get("chat_ids", [])
     
-    # Ensure it's a list (migration safety)
     if isinstance(chat_ids, str):
         chat_ids = [chat_ids]
         
-    c3, c4 = st.columns([3, 1])
-    with c3:
-        new_chat_id = st.text_input("Add New Chat ID (User ID)")
-    with c4:
-        st.write("")
-        st.write("")
-        if st.button("➕ Authorize"):
-            if new_chat_id and new_chat_id not in chat_ids:
-                chat_ids.append(new_chat_id)
-                config['telegram']['chat_ids'] = chat_ids
-                # Remove legacy key if exists to avoid confusion
-                if 'chat_id' in config['telegram']:
-                    del config['telegram']['chat_id']
-                save_config(config)
-                st.success(f"Authorized ID: {new_chat_id}")
-                st.rerun()
-            elif new_chat_id in chat_ids:
-                st.warning("ID already authorized.")
-
+    # Read-Only View for Security
     if chat_ids:
-        st.write("Authorized Users:")
-        for i, cid in enumerate(chat_ids):
-            col_a, col_b = st.columns([4, 1])
-            col_a.code(cid)
-            if col_b.button("🗑️ Revoke", key=f"del_id_{cid}"):
-                chat_ids.remove(cid)
-                config['telegram']['chat_ids'] = chat_ids
-                save_config(config)
-                st.rerun()
+        st.write("Authorized User IDs (Read-Only):")
+        for cid in chat_ids:
+            st.code(cid)
+        st.caption("🔒 To revoke access, edit `Secrets` in Streamlit Cloud dashboard.")
     else:
         st.warning("⚠️ No recipients configured.")
             

@@ -182,7 +182,9 @@ def run_bot_service():
     application.add_handler(CommandHandler("analyze", analyze))
     
     logger.info("🤖 Telegram Bot Listening...")
-    application.run_polling()
+    # allowed_updates=Update.ALL_TYPES is good practice
+    # stop_signals=None is CRITICAL for running in a background thread (non-main thread)
+    application.run_polling(stop_signals=None, close_loop=False)
 
 if __name__ == "__main__":
     run_bot_service()
