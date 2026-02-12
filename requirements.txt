@@ -10,3 +10,5 @@ altair<6           # Pin Altair to avoid v6 breaking changes for now
 watchdog
 toml
 python-telegram-bot
+plotly
+schedule

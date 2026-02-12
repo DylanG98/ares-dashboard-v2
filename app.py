@@ -139,8 +139,11 @@ if page == "📊 Market Analyzer":
                 for h in sent.get('headlines', []):
                     st.markdown(f"- *{h}*")
 
-            # Chart
-            if 'Plot Path' in res['quant'] and res['quant']['Plot Path']:
+            # Chart (Interactive preferred)
+            st.subheader("📈 Technical Analysis")
+            if 'Interactive Chart' in res['quant']:
+                st.plotly_chart(res['quant']['Interactive Chart'], use_container_width=True)
+            elif 'Plot Path' in res['quant'] and res['quant']['Plot Path']:
                 st.image(res['quant']['Plot Path'], caption=f"{ticker} Technical Analysis", use_column_width=True)
 
 # --- PAGE: BOT MANAGER ---
@@ -232,25 +235,45 @@ elif page == "⚙️ Bot Manager":
 
 # --- BACKGROUND BOT SERVICE ---
 @st.cache_resource
-def start_bot_background():
-    """Starts the Telegram Bot in a separate thread. Singleton via st.cache."""
+def start_background_services():
+    """Starts background threads (Telegram Bot & Scheduler). Singleton."""
+    import threading
+    import time
+    from datetime import datetime
+    import schedule
+    from telegram_bot import run_bot_service
+    from daily_briefing import MorningBriefing
+    
+    # 1. Telegram Bot Thread
     try:
-        import threading
-        from telegram_bot import run_bot_service
-        
-        # Only start if it's not already running? 
-        # st.cache_resource ensures this is called only once per runtime session.
-        # But we need to make sure run_bot_service doesn't block the cached function or return immediately.
-        # run_bot_service() calls run_polling() which BLOCKS.
-        # So we must wrap it in a thread HERE.
-        
         bot_thread = threading.Thread(target=run_bot_service, daemon=True)
         bot_thread.start()
         print("✅ Background Bot Thread Started")
-        return bot_thread
     except Exception as e:
         print(f"❌ Failed to start bot: {e}")
-        return None
 
-# Start the bot
-start_bot_background()
+    # 2. Scheduler Thread
+    def scheduler_loop():
+        # Schedule Daily Briefing
+        mb = MorningBriefing()
+        # Schedule at 09:00 AM everyday
+        schedule.every().day.at("09:00").do(mb.generate)
+        
+        # Also run market scan at close? (Optional)
+        # schedule.every().day.at("16:30").do(scan_markets...)
+        
+        print("⏰ Scheduler Started (09:00 AM Briefing)")
+        
+        while True:
+            schedule.run_pending()
+            time.sleep(60) # Check every minute
+
+    try:
+        sched_thread = threading.Thread(target=scheduler_loop, daemon=True)
+        sched_thread.start()
+        print("✅ Background Scheduler Thread Started")
+    except Exception as e:
+        print(f"❌ Failed to start scheduler: {e}")
+
+# Start Services
+start_background_services()

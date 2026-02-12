@@ -69,8 +69,14 @@ class QuantEngine:
         self.data['Regression_Line'] = slope * x + intercept
         r_squared = 1 - (np.sum((y - self.data['Regression_Line'])**2) / np.sum((y - np.mean(y))**2))
         
-        # Plotting
-        plot_path = self._plot_results()
+        # 5. Plotting (Interactive & Static)
+        # We generate a Plotly figure for the Web App
+        fig = self._create_plotly_chart()
+        
+        # We also save a static image for Telegram/Reports (using matplotlib as fallback if kaleido is missing/heavy)
+        # Or we can use the same matplotlib logic as before for the static file.
+        # Let's keep the matplotlib logic for the static file to ensure the bot works without heavy dependencies.
+        static_plot_path = self._plot_results_static()
 
         return {
             "Annualized Volatility": annualized_volatility,
@@ -82,7 +88,8 @@ class QuantEngine:
             "Beta": beta,
             "Trend Slope": slope,
             "R-Squared": r_squared,
-            "Plot Path": plot_path
+            "Plot Path": static_plot_path,
+            "Interactive Chart": fig # Plotly Figure Object
         }
 
     def _calculate_beta(self, stock_returns):
@@ -108,7 +115,55 @@ class QuantEngine:
             print(f"Beta calc error: {e}")
             return 1.0 # Default to 1 if fails
 
-    def _plot_results(self):
+    def _create_plotly_chart(self):
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
+
+        # Create subplots: Price on row 1, RSI on row 2
+        fig = make_subplots(rows=2, cols=1, shared_xaxes=True, 
+                            vertical_spacing=0.03, subplot_titles=(f'{self.ticker} Price', 'RSI'),
+                            row_width=[0.2, 0.7])
+
+        # Candlestick
+        fig.add_trace(go.Candlestick(x=self.data.index,
+                        open=self.data['Open'],
+                        high=self.data['High'],
+                        low=self.data['Low'],
+                        close=self.data['Close'], name='OHLC'), row=1, col=1)
+
+        # Bollinger Bands
+        bb_upper = f"BBU_20_2.0"
+        bb_lower = f"BBL_20_2.0"
+        if bb_upper in self.data.columns:
+            fig.add_trace(go.Scatter(x=self.data.index, y=self.data[bb_upper], name='Upper BB',
+                                     line=dict(color='rgba(0, 255, 0, 0.5)', width=1)), row=1, col=1)
+            fig.add_trace(go.Scatter(x=self.data.index, y=self.data[bb_lower], name='Lower BB',
+                                     line=dict(color='rgba(255, 0, 0, 0.5)', width=1),
+                                     fill='tonexty', fillcolor='rgba(128, 128, 128, 0.1)'), row=1, col=1)
+
+        # Trend Line
+        if 'Regression_Line' in self.data.columns:
+            fig.add_trace(go.Scatter(x=self.data.index, y=self.data['Regression_Line'], name='Trend',
+                                     line=dict(color='orange', width=2)), row=1, col=1)
+
+        # RSI
+        fig.add_trace(go.Scatter(x=self.data.index, y=self.data['RSI_14'], name='RSI',
+                                 line=dict(color='purple', width=2)), row=2, col=1)
+        
+        # RSI Levels
+        fig.add_hline(y=70, line_dash="dash", line_color="red", row=2, col=1)
+        fig.add_hline(y=30, line_dash="dash", line_color="green", row=2, col=1)
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=700,
+            xaxis_rangeslider_visible=False,
+            title_text=f"Technical Analysis: {self.ticker}"
+        )
+        
+        return fig
+
+    def _plot_results_static(self):
         plt.figure(figsize=(14, 7))
         plt.plot(self.data.index, self.data['Close'], label='Close Price', color='blue')
         

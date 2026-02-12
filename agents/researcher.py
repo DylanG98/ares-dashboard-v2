@@ -34,29 +34,47 @@ class Researcher:
             }
 
             # Balance Sheet Analysis
-            if not bs.empty:
-                report += "**Balance Sheet Highlights (Latest):**\n"
-                latest_date = bs.columns[0]
-                total_debt = bs.loc['Total Debt', latest_date] if 'Total Debt' in bs.index else 0
-                total_cash = bs.loc['Cash And Cash Equivalents', latest_date] if 'Cash And Cash Equivalents' in bs.index else 0
-                
-                data["Total Debt"] = total_debt
-                data["Cash"] = total_cash
-                
+            report += "**Balance Sheet Highlights (Latest):**\n"
+            
+            # Helper to safely get latest value
+            def get_latest(df, key, default=0):
+                if df.empty: return default
+                if key in df.index:
+                    return df.loc[key].iloc[0] # First column is usually latest
+                return default
+
+            # Try strict keys first, then loose logic or info fallback
+            total_debt = get_latest(bs, 'Total Debt')
+            if total_debt == 0:
+                 total_debt = info.get('totalDebt', 0)
+                 
+            total_cash = get_latest(bs, 'Cash And Cash Equivalents')
+            if total_cash == 0:
+                total_cash = info.get('totalCash', 0)
+
+            data["Total Debt"] = total_debt
+            data["Cash"] = total_cash
+            
+            if total_debt or total_cash:
                 report += f"- **Total Debt**: ${total_debt:,.0f}\n"
                 report += f"- **Cash & Equivalents**: ${total_cash:,.0f}\n"
             else:
                 report += "*Balance Sheet data unavailable.*\n"
             
             # Cash Flow Analysis
-            if not cf.empty:
-                report += "\n**Cash Flow Highlights (Latest):**\n"
-                latest_cf_date = cf.columns[0]
-                fcf = cf.loc['Free Cash Flow', latest_cf_date] if 'Free Cash Flow' in cf.index else 0
-                op_cash = cf.loc['Operating Cash Flow', latest_cf_date] if 'Operating Cash Flow' in cf.index else 0
+            report += "\n**Cash Flow Highlights (Latest):**\n"
+            
+            fcf = get_latest(cf, 'Free Cash Flow')
+            if fcf == 0:
+                fcf = info.get('freeCashflow', 0)
                 
-                data["Free Cash Flow"] = fcf
-                
+            op_cash = get_latest(cf, 'Operating Cash Flow')
+            if op_cash == 0:
+                op_cash = info.get('operatingCashflow', 0)
+            
+            data["Free Cash Flow"] = fcf
+            
+            if fcf or op_cash:
                 report += f"- **Free Cash Flow**: ${fcf:,.0f}\n"
                 report += f"- **Operating Cash Flow**: ${op_cash:,.0f}\n"
             else:
