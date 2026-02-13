@@ -9,16 +9,9 @@ sys.stdout.reconfigure(encoding='utf-8')
 def test_ai():
     print("[TEST] Testing Gemini AI Integration...")
     
-    # 1. List Models to debug 404
-    api_key = "AIzaSyAJAOTsiXuqS4yJHYEFbws-XIdNZDh_uaM" # Hardcoded for test
-    genai.configure(api_key=api_key)
-    try:
-        print("\n--- Available Models ---")
-        for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods:
-                print(f"- {m.name}")
-    except Exception as e:
-        print(f"Error listing models: {e}")
+    # 1. List Models (Using Config)
+    # The Synthesizer class handles auth via config.json
+    print("--- Initializing Synthesizer ---")
 
     synth = Synthesizer()
     
