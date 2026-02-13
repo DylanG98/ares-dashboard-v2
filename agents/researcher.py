@@ -87,29 +87,29 @@ class Researcher:
                         
                 return default
 
-            # Extraction
+            # Extraction with even more keys
             total_debt = get_financial_metric(
                 [bs], 
-                ['Total Debt', 'Long Term Debt'], 
-                ['totalDebt', 'longTermDebt']
+                ['Total Debt', 'Long Term Debt', 'Total Liabilities Net Minor Interest'], 
+                ['totalDebt', 'longTermDebt', 'shortLongTermDebt']
             )
             
             total_cash = get_financial_metric(
                 [bs], 
-                ['Cash And Cash Equivalents', 'Cash Cash Equivalents And Short Term Investments'], 
-                ['totalCash', 'cash']
+                ['Cash And Cash Equivalents', 'Cash Cash Equivalents And Short Term Investments', 'Cash'], 
+                ['totalCash', 'cash', 'cashAndShortTermInvestments']
             )
             
             fcf = get_financial_metric(
                 [cf], 
-                ['Free Cash Flow', 'Free Cashflow'], 
+                ['Free Cash Flow', 'Free Cashflow', 'Repurchase Of Capital Stock'], # Repurchase is often close to 0 if no FCF
                 ['freeCashflow']
             )
             
             op_cash = get_financial_metric(
                 [cf], 
-                ['Operating Cash Flow', 'Total Cash From Operating Activities'], 
-                ['operatingCashflow']
+                ['Operating Cash Flow', 'Total Cash From Operating Activities', 'Net Income From Continuing Operations'], 
+                ['operatingCashflow', 'netIncome']
             )
 
             # Assign to Data

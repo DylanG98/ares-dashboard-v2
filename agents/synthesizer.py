@@ -145,7 +145,7 @@ Act as a Senior Wall Street Analyst. Analyze the following data for {ticker} and
         # Retry logic for API limits
         import time
         max_retries = 3
-        backoff = 2 # seconds
+        backoff = 4 # seconds (increased)
         
         for attempt in range(max_retries):
             try:
@@ -153,9 +153,23 @@ Act as a Senior Wall Street Analyst. Analyze the following data for {ticker} and
                 return response.text
                 
             except Exception as e:
-                logger.warning(f"Gemini API attempt {attempt+1} failed: {e}")
+                err_str = str(e)
+                logger.warning(f"Gemini API attempt {attempt+1} failed: {err_str}")
+                
+                # Check for 429 (Rate Limit)
+                if "429" in err_str:
+                    if attempt < max_retries - 1:
+                        time.sleep(backoff * (attempt + 2)) # 8s, 12s...
+                        continue
+                    else:
+                        return self._rule_based_analysis(ticker, quant_data, researcher_data, 
+                                                         error_msg="Gemini Quota Exceeded (429). Please wait a few seconds.")
+
                 if attempt < max_retries - 1:
-                    time.sleep(backoff * (2 ** attempt)) # 2s, 4s, 8s
+                    time.sleep(backoff * (2 ** attempt)) # 4s, 8s
                 else:
-                    logger.error(f"Gemini API failed after {max_retries} attempts.")
-                    return self._rule_based_analysis(ticker, quant_data, researcher_data, error_msg=str(e))
+                    # Clean up the error message for the UI
+                    clean_err = err_str.split('\n')[0] # Get only first line
+                    return self._rule_based_analysis(ticker, quant_data, researcher_data, error_msg=clean_err)
+        
+        return self._rule_based_analysis(ticker, quant_data, researcher_data, error_msg="Unknown AI failure.")

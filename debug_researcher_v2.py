@@ -17,3 +17,4 @@ def test_ticker(ticker):
 if __name__ == "__main__":
     test_ticker("AAPL")
     test_ticker("GGAL.BA")
+    test_ticker("YPFD.BA")
