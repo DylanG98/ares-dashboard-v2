@@ -44,11 +44,8 @@ class QuantEngine:
         self.data['RSI_14'] = 100 - (100 / (1 + rs))
         current_rsi = self.data['RSI_14'].iloc[-1]
 
-        # Bollinger Bands (20, 2)
+        # SMA 20 (Basis for previous BB section, kept for chart)
         self.data['SMA_20'] = self.data['Close'].rolling(window=20).mean()
-        std_20 = self.data['Close'].rolling(window=20).std()
-        self.data['BBU_20_2.0'] = self.data['SMA_20'] + (std_20 * 2)
-        self.data['BBL_20_2.0'] = self.data['SMA_20'] - (std_20 * 2)
 
         # SMA 10
         self.data['SMA_10'] = self.data['Close'].rolling(window=10).mean()
@@ -131,15 +128,7 @@ class QuantEngine:
                         low=self.data['Low'],
                         close=self.data['Close'], name='OHLC'), row=1, col=1)
 
-        # Bollinger Bands
-        bb_upper = f"BBU_20_2.0"
-        bb_lower = f"BBL_20_2.0"
-        if bb_upper in self.data.columns:
-            fig.add_trace(go.Scatter(x=self.data.index, y=self.data[bb_upper], name='Upper BB',
-                                     line=dict(color='rgba(0, 255, 0, 0.5)', width=1)), row=1, col=1)
-            fig.add_trace(go.Scatter(x=self.data.index, y=self.data[bb_lower], name='Lower BB',
-                                     line=dict(color='rgba(255, 0, 0, 0.5)', width=1),
-                                     fill='tonexty', fillcolor='rgba(128, 128, 128, 0.1)'), row=1, col=1)
+        # (Bollinger Bands Removed)
 
         # SMAs (10, 20)
         if 'SMA_10' in self.data.columns:
@@ -149,9 +138,10 @@ class QuantEngine:
             fig.add_trace(go.Scatter(x=self.data.index, y=self.data['SMA_20'], name='SMA 20',
                                      line=dict(color='cyan', width=1.5)), row=1, col=1)
 
-        # Volume (Secondary Axis on Row 2)
+        # Volume (Secondary Axis on Row 2) with Colors
+        colors = ['green' if row['Close'] >= row['Open'] else 'red' for _, row in self.data.iterrows()]
         fig.add_trace(go.Bar(x=self.data.index, y=self.data['Volume'], name='Volume',
-                             marker_color='rgba(100, 100, 100, 0.3)'), row=2, col=1, secondary_y=True)
+                             marker_color=colors, opacity=0.5), row=2, col=1, secondary_y=True)
 
         # RSI (Primary Axis on Row 2)
         fig.add_trace(go.Scatter(x=self.data.index, y=self.data['RSI_14'], name='RSI',
@@ -174,24 +164,10 @@ class QuantEngine:
         plt.figure(figsize=(14, 7))
         plt.plot(self.data.index, self.data['Close'], label='Close Price', color='blue')
         
-        # Check for BB columns and plot
-        bb_upper = f"BBU_20_2.0"
-        bb_lower = f"BBL_20_2.0"
-        
-        if bb_upper in self.data.columns and bb_lower in self.data.columns:
-            plt.plot(self.data.index, self.data[bb_upper], label='Upper BB', linestyle='--', color='green', alpha=0.6)
-            plt.plot(self.data.index, self.data[bb_lower], label='Lower BB', linestyle='--', color='red', alpha=0.6)
-            plt.fill_between(self.data.index, self.data[bb_upper], self.data[bb_lower], color='gray', alpha=0.1)
-
-        # Plot SMAs
-        if 'SMA_10' in self.data.columns:
-            plt.plot(self.data.index, self.data['SMA_10'], label='SMA 10', color='orange', alpha=0.8, linestyle='--')
-        if 'SMA_20' in self.data.columns:
-            plt.plot(self.data.index, self.data['SMA_20'], label='SMA 20', color='cyan', alpha=0.8, linestyle='--')
-
-        # Plot Volume on secondary axis
+        # Plot Volume on secondary axis with colors
         ax2 = plt.gca().twinx()
-        ax2.bar(self.data.index, self.data['Volume'], color='gray', alpha=0.3, label='Volume')
+        colors = ['green' if row['Close'] >= row['Open'] else 'red' for _, row in self.data.iterrows()]
+        ax2.bar(self.data.index, self.data['Volume'], color=colors, alpha=0.3, label='Volume')
         ax2.set_ylabel("Volume")
 
         plt.title(f"Technical Analysis for {self.ticker}")
