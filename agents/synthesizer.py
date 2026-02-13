@@ -140,9 +140,20 @@ Act as a Senior Wall Street Analyst. Analyze the following data for {ticker} and
 3. **Tone**: Professional, objective, and institutional. No emojis, just facts.
 4. **Format**: Use Markdown. Keep it under 200 words.
 """
-        try:
-            response = self.model.generate_content(prompt)
-            return response.text
-        except Exception as e:
-            logger.error(f"Gemini AI failed: {e}")
-            return self._rule_based_analysis(ticker, quant_data, researcher_data)
+        # Retry logic for API limits
+        import time
+        max_retries = 3
+        backoff = 2 # seconds
+        
+        for attempt in range(max_retries):
+            try:
+                response = self.model.generate_content(prompt)
+                return response.text
+                
+            except Exception as e:
+                logger.warning(f"Gemini API attempt {attempt+1} failed: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(backoff * (2 ** attempt)) # 2s, 4s, 8s
+                else:
+                    logger.error(f"Gemini API failed after {max_retries} attempts.")
+                    return self._rule_based_analysis(ticker, quant_data, researcher_data)
