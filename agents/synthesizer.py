@@ -17,29 +17,90 @@ class Synthesizer:
             self.model = None
             logger.warning("Gemini API Key not found. Falling back to rule-based logic.")
 
-    def _rule_based_analysis(self, ticker, quant_data, researcher_data):
-        """Fallback logic if AI fails."""
+    def get_signal(self, quant_data: dict, researcher_data: dict) -> dict:
+        """
+        Calculates the score and verdict based on input data.
+        Returns a dict with 'score', 'verdict', 'color', and 'signals' list.
+        Used by Telegram Bot /price command and fallback logic.
+        """
         rsi = quant_data.get("RSI (14)", 50)
-        score = 0
-        signals = []
         
+        total_debt = researcher_data.get("Total Debt", 0)
+        cash = researcher_data.get("Cash", 0)
+        fcf = researcher_data.get("Free Cash Flow", 0)
+        
+        signals = []
+        score = 0 # -2.5 to +2.5
+        
+        # Technical Logic
         if rsi < 30:
-            signals.append("🟢 Bullish: Oversold (RSI < 30)")
+            signals.append("🟢 **Bullish**: Stock is Oversold (RSI < 30).")
             score += 1
         elif rsi > 70:
-            signals.append("🔴 Bearish: Overbought (RSI > 70)")
+            signals.append("🔴 **Bearish**: Stock is Overbought (RSI > 70).")
+            score -= 1
+        else:
+            signals.append("⚪ **Neutral**: RSI is in normal range.")
+
+        # Fundamental Logic
+        if fcf > 0:
+            signals.append("🟢 **Bullish**: Positive Free Cash Flow.")
+            score += 1
+        else:
+            signals.append("🔴 **Bearish**: Negative Free Cash Flow.")
             score -= 1
             
-        fcf = researcher_data.get("Free Cash Flow", 0)
-        if fcf > 0:
-            signals.append("🟢 Bullish: Positive Free Cash Flow")
-            score += 1
+        if cash > total_debt:
+            signals.append("🟢 **Bullish**: Cash reserves exceed Total Debt.")
+            score += 0.5
+        else:
+            signals.append("🟠 **Caution**: Total Debt exceeds Cash.")
+            score -= 0.5
+
+        # Sentiment Logic
+        sentiment = researcher_data.get("sentiment", {}).get("sentiment", "Neutral")
+        polarity = researcher_data.get("sentiment", {}).get("polarity", 0)
+        
+        if sentiment == "Bullish":
+            signals.append(f"🟢 **Sentiment**: Optimistic (Score: {polarity}).")
+            score += 0.5
+        elif sentiment == "Bearish":
+            signals.append(f"🔴 **Sentiment**: Pessimistic (Score: {polarity}).")
+            score -= 0.5
+
+        # Final Verdict
+        if score >= 1.5:
+            verdict = "STRONG BUY"
+            color = "🟢"
+        elif score >= 0.5:
+            verdict = "BUY"
+            color = "🟢"
+        elif score <= -1.5:
+            verdict = "STRONG SELL"
+            color = "🔴"
+        elif score <= -0.5:
+            verdict = "SELL"
+            color = "🔴"
+        else:
+            verdict = "HOLD"
+            color = "⚪"
             
-        verdict = "BUY" if score > 0 else "SELL" if score < 0 else "HOLD"
+        return {
+            "score": score,
+            "verdict": verdict,
+            "color": color,
+            "signals": signals
+        }
+
+    def _rule_based_analysis(self, ticker, quant_data, researcher_data):
+        """Fallback logic if AI fails."""
+        analysis = self.get_signal(quant_data, researcher_data)
+        verdict = analysis["verdict"]
+        signals = analysis["signals"]
         
         return f"""
 # A.R.E.S. Fallback Report: {ticker}
-## ⚖️ Verdict: {verdict}
+## ⚖️ Verdict: {analysis['color']} {verdict}
 **Note**: AI generation failed. Using basic rules.
 
 ### Signals

@@ -39,12 +39,21 @@ def test_ai():
     }
     
     print("\n--- Sending Data to Gemini ---")
-    report = synth.synthesize(ticker, quant_data, researcher_data)
-    
-    print("\n[SUCCESS] AI Report Result:")
-    print("="*50)
-    print(report)
-    print("="*50)
+    try:
+        report = synth.synthesize(ticker, quant_data, researcher_data)
+        print("\n[SUCCESS] AI Report Result:")
+        print("="*50)
+        print(report)
+        print("="*50)
+    except Exception as e:
+        print(f"[ERROR] AI Synthesis failed: {e}")
+
+    print("\n--- Testing Legacy get_signal ---")
+    try:
+        signals = synth.get_signal(quant_data, researcher_data)
+        print(f"[SUCCESS] Verdict: {signals['verdict']} | Score: {signals['score']}")
+    except Exception as e:
+        print(f"[ERROR] get_signal failed: {e}")
 
 if __name__ == "__main__":
     test_ai()
