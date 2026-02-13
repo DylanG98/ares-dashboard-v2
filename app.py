@@ -159,7 +159,7 @@ elif page == "⚙️ Bot Manager":
     with col_id:
         user_id_input = st.text_input("telegram_id", placeholder="e.g. 12345678", label_visibility="collapsed")
     with col_help:
-         st.caption("ℹ️ Send any message to the bot to get your ID.")
+         st.caption("👉 **Start here:** [Message @AresMarket_bot](https://t.me/AresMarket_bot) to get your ID.")
 
     if user_id_input:
         from utils.user_manager import UserManager

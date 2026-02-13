@@ -29,6 +29,8 @@ Powered by **Google Gemini 1.5**, A.R.E.S. doesn't just show numbers; it *thinks
     - `/track [TICKER]`: Add assets to your personal watchlist.
 - **Daily Briefing**: A completely automated 09:00 AM pre-market report delivered to your phone.
 
+👉 **Interact with the Bot:** [@AresMarket_bot](https://t.me/AresMarket_bot)
+
 ### ☁️ Cloud-Native & Always-On
 - **Serverless Architecture**: Deployed on Streamlit Community Cloud.
 - **Zero-Downtime**: Kept alive via external heartbeat monitors (UptimeRobot), ensuring the scheduler runs even when your PC is off.
