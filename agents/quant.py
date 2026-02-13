@@ -65,12 +65,8 @@ class QuantEngine:
         # 3. Beta (vs SPY)
         beta = self._calculate_beta(self.data['Log Returns'])
 
-        # 4. Linear Regression (Trend)
-        y = self.data['Close'].values
-        x = np.arange(len(y))
-        slope, intercept = np.polyfit(x, y, 1)
-        self.data['Regression_Line'] = slope * x + intercept
-        r_squared = 1 - (np.sum((y - self.data['Regression_Line'])**2) / np.sum((y - np.mean(y))**2))
+        # 4. (Removed Linear Regression)
+        slope, intercept, r_squared = 0, 0, 0
         
         # 5. Plotting (Interactive & Static)
         # We generate a Plotly figure for the Web App
@@ -122,10 +118,11 @@ class QuantEngine:
         import plotly.graph_objects as go
         from plotly.subplots import make_subplots
 
-        # Create subplots: Price on row 1, RSI on row 2
+        # Create subplots: Price on row 1, RSI & Volume on row 2
         fig = make_subplots(rows=2, cols=1, shared_xaxes=True, 
-                            vertical_spacing=0.03, subplot_titles=(f'{self.ticker} Price', 'RSI'),
-                            row_width=[0.2, 0.7])
+                            vertical_spacing=0.03, subplot_titles=(f'{self.ticker} Price', 'Volume & RSI'),
+                            row_width=[0.3, 0.7],
+                            specs=[[{"secondary_y": False}], [{"secondary_y": True}]])
 
         # Candlestick
         fig.add_trace(go.Candlestick(x=self.data.index,
@@ -152,18 +149,17 @@ class QuantEngine:
             fig.add_trace(go.Scatter(x=self.data.index, y=self.data['SMA_20'], name='SMA 20',
                                      line=dict(color='cyan', width=1.5)), row=1, col=1)
 
-        # Trend Line
-        if 'Regression_Line' in self.data.columns:
-            fig.add_trace(go.Scatter(x=self.data.index, y=self.data['Regression_Line'], name='Trend',
-                                     line=dict(color='orange', width=2)), row=1, col=1)
+        # Volume (Secondary Axis on Row 2)
+        fig.add_trace(go.Bar(x=self.data.index, y=self.data['Volume'], name='Volume',
+                             marker_color='rgba(100, 100, 100, 0.3)'), row=2, col=1, secondary_y=True)
 
-        # RSI
+        # RSI (Primary Axis on Row 2)
         fig.add_trace(go.Scatter(x=self.data.index, y=self.data['RSI_14'], name='RSI',
-                                 line=dict(color='purple', width=2)), row=2, col=1)
+                                 line=dict(color='purple', width=2)), row=2, col=1, secondary_y=False)
         
         # RSI Levels
-        fig.add_hline(y=70, line_dash="dash", line_color="red", row=2, col=1)
-        fig.add_hline(y=30, line_dash="dash", line_color="green", row=2, col=1)
+        fig.add_hline(y=70, line_dash="dash", line_color="red", row=2, col=1, secondary_y=False)
+        fig.add_hline(y=30, line_dash="dash", line_color="green", row=2, col=1, secondary_y=False)
 
         fig.update_layout(
             template="plotly_dark",
@@ -193,9 +189,10 @@ class QuantEngine:
         if 'SMA_20' in self.data.columns:
             plt.plot(self.data.index, self.data['SMA_20'], label='SMA 20', color='cyan', alpha=0.8, linestyle='--')
 
-        # Plot Regression Line
-        if 'Regression_Line' in self.data.columns:
-             plt.plot(self.data.index, self.data['Regression_Line'], label='Trend (LinReg)', color='orange', linestyle='-', linewidth=2)
+        # Plot Volume on secondary axis
+        ax2 = plt.gca().twinx()
+        ax2.bar(self.data.index, self.data['Volume'], color='gray', alpha=0.3, label='Volume')
+        ax2.set_ylabel("Volume")
 
         plt.title(f"Technical Analysis for {self.ticker}")
         plt.xlabel("Date")

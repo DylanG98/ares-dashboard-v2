@@ -23,31 +23,11 @@ from utils.config_loader import load_config, save_config
 
 # Page Config
 st.set_page_config(
-    page_title="A.R.E.S. Dashboard 2.2",
+    page_title="A.R.E.S. Dashboard",
     page_icon="🦅",
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
-# Sidebar Debug
-with st.sidebar.expander("🩺 System Health", expanded=True):
-    config = load_config()
-    api_key = config.get("gemini", {}).get("api_key")
-    api_key_present = bool(api_key) and api_key != "YOUR_KEY_HERE"
-    
-    st.write(f"**API Key Detected:** {'✅ Yes' if api_key_present else '❌ No'}")
-    if not api_key_present:
-        st.error("AI Key Missing! Check config/secrets.")
-        
-    metric = "gemini-flash-latest"
-    if "gemini" in config and "model" in config["gemini"]:
-        metric = config["gemini"]["model"]
-    st.caption(f"Model: `{metric}`")
-    
-    if st.button("🧹 Clear Cache & Reboot"):
-        st.cache_data.clear()
-        st.cache_resource.clear()
-        st.rerun()
 
 # Custom CSS
 st.markdown("""
