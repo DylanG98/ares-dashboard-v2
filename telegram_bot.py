@@ -35,7 +35,10 @@ user_manager = UserManager()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_authorized(update):
-        await update.message.reply_text("⛔ Unauthorized access.")
+        user_id = str(update.effective_user.id)
+        # Reload config to be sure
+        allowed = get_authorized_ids()
+        await update.message.reply_text(f"⛔ Unauthorized access.\nYour ID: `{user_id}`\nAllowed: `{allowed}`")
         return
     await update.message.reply_text(
         "🤖 **A.R.E.S. 2.0 Online**\n\n"

@@ -1,0 +1,13 @@
+services:
+  dashboard:
+    image: ares-dashboard:latest
+    container_name: ares-dashboard
+    build: .
+    ports:
+      - "8501:8501"
+    volumes:
+      # Montamos todo el directorio actual para desarrollo (hot-reload de código)
+      - .:/app
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
