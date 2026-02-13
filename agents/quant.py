@@ -45,10 +45,13 @@ class QuantEngine:
         current_rsi = self.data['RSI_14'].iloc[-1]
 
         # Bollinger Bands (20, 2)
-        sma_20 = self.data['Close'].rolling(window=20).mean()
+        self.data['SMA_20'] = self.data['Close'].rolling(window=20).mean()
         std_20 = self.data['Close'].rolling(window=20).std()
-        self.data['BBU_20_2.0'] = sma_20 + (std_20 * 2)
-        self.data['BBL_20_2.0'] = sma_20 - (std_20 * 2)
+        self.data['BBU_20_2.0'] = self.data['SMA_20'] + (std_20 * 2)
+        self.data['BBL_20_2.0'] = self.data['SMA_20'] - (std_20 * 2)
+
+        # SMA 10
+        self.data['SMA_10'] = self.data['Close'].rolling(window=10).mean()
 
         # --- Advanced Analytics ---
         # 1. Sharpe Ratio (Risk Free Rate = 4%)
@@ -141,6 +144,14 @@ class QuantEngine:
                                      line=dict(color='rgba(255, 0, 0, 0.5)', width=1),
                                      fill='tonexty', fillcolor='rgba(128, 128, 128, 0.1)'), row=1, col=1)
 
+        # SMAs (10, 20)
+        if 'SMA_10' in self.data.columns:
+            fig.add_trace(go.Scatter(x=self.data.index, y=self.data['SMA_10'], name='SMA 10',
+                                     line=dict(color='yellow', width=1.5)), row=1, col=1)
+        if 'SMA_20' in self.data.columns:
+            fig.add_trace(go.Scatter(x=self.data.index, y=self.data['SMA_20'], name='SMA 20',
+                                     line=dict(color='cyan', width=1.5)), row=1, col=1)
+
         # Trend Line
         if 'Regression_Line' in self.data.columns:
             fig.add_trace(go.Scatter(x=self.data.index, y=self.data['Regression_Line'], name='Trend',
@@ -175,6 +186,12 @@ class QuantEngine:
             plt.plot(self.data.index, self.data[bb_upper], label='Upper BB', linestyle='--', color='green', alpha=0.6)
             plt.plot(self.data.index, self.data[bb_lower], label='Lower BB', linestyle='--', color='red', alpha=0.6)
             plt.fill_between(self.data.index, self.data[bb_upper], self.data[bb_lower], color='gray', alpha=0.1)
+
+        # Plot SMAs
+        if 'SMA_10' in self.data.columns:
+            plt.plot(self.data.index, self.data['SMA_10'], label='SMA 10', color='orange', alpha=0.8, linestyle='--')
+        if 'SMA_20' in self.data.columns:
+            plt.plot(self.data.index, self.data['SMA_20'], label='SMA 20', color='cyan', alpha=0.8, linestyle='--')
 
         # Plot Regression Line
         if 'Regression_Line' in self.data.columns:
