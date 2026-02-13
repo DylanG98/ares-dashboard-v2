@@ -149,7 +149,7 @@ if page == "📊 Market Analyzer":
                 st.metric("RSI (14)", f"{res['quant'].get('RSI (14)',0):.2f}")
                 st.metric("Volatility", f"{res['quant'].get('Annualized Volatility',0):.1%}")
                 
-            with col2:
+            with c2:
                 st.subheader("🏢 Fundamentals")
                 mc = res['research'].get('Market Cap', 0)
                 fcf = res['research'].get('Free Cash Flow', 0)
