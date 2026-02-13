@@ -74,7 +74,9 @@ async def untrack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ticker = context.args[0].upper()
     user_id = str(update.effective_user.id)
     
-    if user_manager.remove_ticker(user_id, ticker):
+    # Use local instance to ensure freshness
+    um = UserManager()
+    if um.remove_ticker(user_id, ticker):
         await update.message.reply_text(f"🗑️ Removed **{ticker}**.", parse_mode="Markdown")
     else:
         await update.message.reply_text(f"⚠️ **{ticker}** was not found in your watchlist.", parse_mode="Markdown")
