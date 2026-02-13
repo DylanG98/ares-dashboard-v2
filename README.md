@@ -90,4 +90,4 @@ streamlit run app.py
 This project is open-source and available under the MIT License.
 
 ---
-*Built with ❤️ by A.R.E.S. Engineering Team*
+*Built with ❤️ by A.R.E.S. Engineering Team* A.K.A Dylan Guzman ;)
