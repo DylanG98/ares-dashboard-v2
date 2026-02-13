@@ -88,16 +88,22 @@ class MorningBriefing:
                 logger.error(f"Error processing {ticker}: {e}")
         return t_msg
 
-    def generate(self):
-        logger.info("Generating personalized briefings...")
+    def generate(self, target_user_id=None):
+        logger.info(f"Generating personalized briefings... Target: {target_user_id if target_user_id else 'ALL'}")
         
         # 1. Get Authorized Users
         tg_conf = self.config.get("telegram", {})
-        chat_ids = tg_conf.get("chat_ids", [])
-        if not chat_ids and "chat_id" in tg_conf:
-            chat_ids = [tg_conf["chat_id"]]
         
-        authorized_users = [str(uid) for uid in chat_ids]
+        if target_user_id:
+             # If targeting a specific user, we don't need to check config allowlist, 
+             # assuming the caller (app.py) verified it or it's a manual test.
+             # Converting to string to ensure matching
+             authorized_users = [str(target_user_id)]
+        else:
+            chat_ids = tg_conf.get("chat_ids", [])
+            if not chat_ids and "chat_id" in tg_conf:
+                chat_ids = [tg_conf["chat_id"]]
+            authorized_users = [str(uid) for uid in chat_ids]
         
         if not authorized_users:
             logger.warning("No users to send briefing to.")

@@ -81,6 +81,8 @@ async def watchlist(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_authorized(update): return
     
     user_id = str(update.effective_user.id)
+    # Reload from disk just in case
+    user_manager = UserManager()
     tickers = user_manager.get_watchlist(user_id)
     
     if tickers:

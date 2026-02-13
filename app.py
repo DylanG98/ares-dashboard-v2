@@ -150,83 +150,62 @@ if page == "📊 Market Analyzer":
 elif page == "⚙️ Bot Manager":
     st.header("🤖 Bot Configuration")
     
-    tab1, tab2 = st.tabs(["🔒 Admin", "👤 My Watchlist"])
-
-    with tab1:
-        st.subheader("📢 Broadcast List")
+    # Combined "My Watchlist" View (Single Tab)
+    st.subheader("👤 My Watchlist & Briefing")
     
-        # Load Config for Editing
-        config = load_config()
+    st.info("Enter your Telegram ID to manage your tracking list and trigger reports.")
+    
+    col_id, col_help = st.columns([2, 1])
+    with col_id:
+        user_id_input = st.text_input("telegram_id", placeholder="e.g. 12345678", label_visibility="collapsed")
+    with col_help:
+         st.caption("ℹ️ Send any message to the bot to get your ID.")
+
+    if user_id_input:
+        from utils.user_manager import UserManager
+        from daily_briefing import MorningBriefing
         
-        # Display Current Chat IDs
-        current_ids = config.get("telegram", {}).get("chat_ids", [])
-        st.write("Authorized Chat IDs:")
-        st.code(current_ids)
+        um = UserManager()
+        user_watchlist = um.get_watchlist(user_id_input)
         
-        st.info("To add/remove users from the broadcast list, please edit your Streamlit Secrets or `config.json`.")
+        st.divider()
+        st.write(f"**WATCHLIST FOR:** `{user_id_input}`")
+        
+        if user_watchlist:
+            st.success(f"Tracking {len(user_watchlist)} assets: " + ", ".join(user_watchlist))
+            
+            # Management UI
+            c1, c2 = st.columns([3, 1])
+            with c1:
+                ticker_to_remove = st.selectbox("Remove Ticker:", user_watchlist, key="rem_box")
+            with c2:
+                if st.button("🗑️ Delete"):
+                    um.remove_ticker(user_id_input, ticker_to_remove)
+                    st.rerun()
+        else:
+            st.warning("📭 Watchlist is currently empty.")
+            
+        # Add Ticker Section
+        c3, c4 = st.columns([3, 1])
+        with c3:
+            new_ticker = st.text_input("Add Ticker (Yahoo Symbol):", key="add_box").upper()
+        with c4:
+             if st.button("➕ Add"):
+                if new_ticker:
+                    um.add_ticker(user_id_input, new_ticker)
+                    st.success(f"Added {new_ticker}")
+                    st.rerun()
 
         st.divider()
-
-        # User Database View (Admin)
-        st.subheader("👥 User Database (Admin)")
-        try:
-            from utils.user_manager import UserManager
-            from daily_briefing import MorningBriefing
-            
-            um = UserManager()
-            all_users = um.get_all_users()
-            if all_users:
-                st.json(all_users)
-            else:
-                st.info("No personal watchlists active.")
-                
-            if st.button("🚀 Test Morning Briefing Now"):
-                with st.spinner("Generating & Sending..."):
-                    mb = MorningBriefing()
-                    mb.generate()
-                st.success("Briefing sent! Check Telegram.")
-                
-        except Exception as e:
-            st.error(f"Could not load User DB: {e}")
         
-    with tab2:
-        st.subheader("📝 Manage Your Watchlist")
-        
-        user_id_input = st.text_input("Enter your Telegram ID:", help="You can find this by sending any message to the bot.")
-        
-        if user_id_input:
-            um = UserManager()
-            user_watchlist = um.get_watchlist(user_id_input)
-            
-            st.write(f"**Current Watchlist for {user_id_input}:**")
-            
-            if user_watchlist:
-                # Display simply
-                st.write(", ".join(user_watchlist))
-                
-                # Management UI
-                col1, col2 = st.columns([3, 1])
-                with col1:
-                    ticker_to_remove = st.selectbox("Select ticker to remove:", user_watchlist, key="remove_box")
-                with col2:
-                    if st.button("❌ Remove"):
-                        um.remove_ticker(user_id_input, ticker_to_remove)
-                        st.rerun()
-            else:
-                st.info("Your watchlist is empty.")
-            
-            st.divider()
-            
-            # Add Ticker
-            col3, col4 = st.columns([3, 1])
-            with col3:
-                new_ticker = st.text_input("Add New Ticker (e.g. AAPL, YPFD.BA):", key="add_box").upper()
-            with col4:
-                if st.button("➕ Add"):
-                    if new_ticker:
-                        um.add_ticker(user_id_input, new_ticker)
-                        st.success(f"Added {new_ticker}")
-                        st.rerun()
+        # Send Now Button
+        st.subheader("🚀 Instant Report")
+        if st.button(f"Send Briefing to {user_id_input} Now"):
+            with st.spinner("Analyzing markets & generating report..."):
+                mb = MorningBriefing()
+                # Run for THIS user only
+                mb.generate(target_user_id=user_id_input)
+            st.success("✅ Report sent! Check your Telegram.")
 
     st.divider()
     
