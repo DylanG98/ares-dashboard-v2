@@ -92,16 +92,18 @@ class Synthesizer:
             "signals": signals
         }
 
-    def _rule_based_analysis(self, ticker, quant_data, researcher_data):
+    def _rule_based_analysis(self, ticker, quant_data, researcher_data, error_msg=None):
         """Fallback logic if AI fails."""
         analysis = self.get_signal(quant_data, researcher_data)
         verdict = analysis["verdict"]
         signals = analysis["signals"]
         
+        error_context = f"Error: {error_msg}" if error_msg else "AI generation failed."
+        
         return f"""
 # A.R.E.S. Fallback Report: {ticker}
 ## ⚖️ Verdict: {analysis['color']} {verdict}
-**Note**: AI generation failed. Using basic rules.
+**Note**: {error_context} Using basic rules.
 
 ### Signals
 {chr(10).join(['- ' + s for s in signals])}
@@ -156,4 +158,4 @@ Act as a Senior Wall Street Analyst. Analyze the following data for {ticker} and
                     time.sleep(backoff * (2 ** attempt)) # 2s, 4s, 8s
                 else:
                     logger.error(f"Gemini API failed after {max_retries} attempts.")
-                    return self._rule_based_analysis(ticker, quant_data, researcher_data)
+                    return self._rule_based_analysis(ticker, quant_data, researcher_data, error_msg=str(e))
