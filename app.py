@@ -228,12 +228,16 @@ def start_background_services():
     from daily_briefing import MorningBriefing
     
     # 1. Telegram Bot Thread
-    try:
-        bot_thread = threading.Thread(target=run_bot_service, daemon=True)
-        bot_thread.start()
-        print("✅ Background Bot Thread Started")
-    except Exception as e:
-        print(f"❌ Failed to start bot: {e}")
+    # Check if already running to prevent duplicates (Conflict error)
+    if any(t.name == "TelegramBot" for t in threading.enumerate()):
+        print("⚠️ Telegram Bot already running. Skipping start.")
+    else:
+        try:
+            bot_thread = threading.Thread(target=run_bot_service, name="TelegramBot", daemon=True)
+            bot_thread.start()
+            print("✅ Background Bot Thread Started")
+        except Exception as e:
+            print(f"❌ Failed to start bot: {e}")
 
     # 2. Scheduler Thread
     def scheduler_loop():
@@ -252,12 +256,15 @@ def start_background_services():
             schedule.run_pending()
             time.sleep(30) # Check every 30s to be more precise
 
-    try:
-        sched_thread = threading.Thread(target=scheduler_loop, daemon=True)
-        sched_thread.start()
-        print("✅ Background Scheduler Thread Started")
-    except Exception as e:
-        print(f"❌ Failed to start scheduler: {e}")
+    if any(t.name == "Scheduler" for t in threading.enumerate()):
+        print("⚠️ Scheduler already running. Skipping start.")
+    else:
+        try:
+            sched_thread = threading.Thread(target=scheduler_loop, name="Scheduler", daemon=True)
+            sched_thread.start()
+            print("✅ Background Scheduler Thread Started")
+        except Exception as e:
+            print(f"❌ Failed to start scheduler: {e}")
 
 # Start Services
 start_background_services()

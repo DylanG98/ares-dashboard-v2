@@ -26,6 +26,9 @@ class MorningBriefing:
         """Fetches SPY data once for all reports."""
         try:
             spy_df = get_market_data("SPY", period="6mo", save_dir="data/briefing")
+            # Force numeric
+            spy_df['Close'] = pd.to_numeric(spy_df['Close'], errors='coerce')
+            
             spy_close = spy_df['Close'].iloc[-1]
             spy_prev = spy_df['Close'].iloc[-2]
             spy_chg = ((spy_close - spy_prev) / spy_prev) * 100
@@ -55,13 +58,29 @@ class MorningBriefing:
         t_msg += "`| Ticker | Precio  | Var % | RSI |`\n"
         t_msg += "`| :--- | :--- | :--- | :--- |`\n"
         
+        import time
         for ticker in tickers:
             try:
+                # Debug log
+                logger.info(f"Processing {ticker} for table...")
+                time.sleep(2) # Be gentle with Yahoo to avoid rate limits/blocks
+                
                 df = get_market_data(ticker, period="6mo", save_dir="data/briefing")
-                if df.empty: continue
+                if df.empty: 
+                    logger.warning(f"Skipping {ticker}: No data")
+                    continue
+
+                # Force numeric conversion to avoid string errors
+                df['Close'] = pd.to_numeric(df['Close'], errors='coerce')
                 
                 close = df['Close'].iloc[-1]
                 prev = df['Close'].iloc[-2]
+                
+                # Check for NaN after conversion
+                if pd.isna(close) or pd.isna(prev):
+                     logger.warning(f"Skipping {ticker}: Invalid numeric data")
+                     continue
+
                 change_pct = ((close - prev) / prev) * 100
                 
                 # RSI Calculation
@@ -84,8 +103,11 @@ class MorningBriefing:
                 
                 row = f"`| {t_str} | {p_str} | {c_str:<5} | {rsi_str:<3} |`"
                 t_msg += row + "\n"
+                
             except Exception as e:
                 logger.error(f"Error processing {ticker}: {e}")
+                # Continue successfully to next ticker despite error
+                continue
         return t_msg
 
     def generate(self, target_user_id=None):

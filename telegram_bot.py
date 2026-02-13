@@ -58,7 +58,9 @@ async def track(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ticker = context.args[0].upper()
     user_id = str(update.effective_user.id)
     
-    if user_manager.add_ticker(user_id, ticker):
+    # Use local instance to ensure freshness
+    um = UserManager()
+    if um.add_ticker(user_id, ticker):
         await update.message.reply_text(f"✅ Added **{ticker}** to your watchlist.", parse_mode="Markdown")
     else:
         await update.message.reply_text(f"ℹ️ **{ticker}** is already in your watchlist.", parse_mode="Markdown")
