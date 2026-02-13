@@ -99,6 +99,8 @@ class Researcher:
             data["Cash"] = total_cash
             data["Free Cash Flow"] = fcf
             
+            print(f"[RESEARCHER DEBUG] {ticker} -> MC: {market_cap}, Debt: {total_debt}, Cash: {total_cash}, FCF: {fcf}")
+            
             # Formatting Report
             if total_debt or total_cash:
                 report += f"- **Total Debt**: ${total_debt:,.0f}\n"
