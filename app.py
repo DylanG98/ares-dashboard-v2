@@ -137,7 +137,13 @@ if page == "📊 Market Analyzer":
                 
                 st.write("**latest Headlines:**")
                 for h in sent.get('headlines', []):
-                    st.markdown(f"- *{h}*")
+                    st.write(f"- *{h}*")
+
+            # AI Analysis Section
+            st.divider()
+            with st.expander("🧠 **Read Full AI Analysis (Gemini 1.5)**", expanded=True):
+                st.markdown(res['report_text'])
+            st.divider()
 
             # Chart (Interactive preferred)
             st.subheader("📈 Technical Analysis")
