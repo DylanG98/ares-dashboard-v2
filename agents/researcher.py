@@ -10,12 +10,30 @@ class Researcher:
         Fetches fundamental data (Balance Sheet, Cash Flow) from yfinance and summarizes findings.
         """
         try:
-            stock = yf.Ticker(ticker)
-            bs = stock.balance_sheet
-            cf = stock.cashflow
-            info = stock.info
+        import time
+        stock = yf.Ticker(ticker)
+        
+        # Robust Fetching with retries
+        info = {}
+        bs = pd.DataFrame()
+        cf = pd.DataFrame()
+        
+        for attempt in range(3):
+            try:
+                if not info: info = stock.info
+                if bs.empty: bs = stock.balance_sheet
+                if cf.empty: cf = stock.cashflow
+                
+                # If we got at least something, break
+                if info and (not bs.empty or not cf.empty):
+                    break
+            except Exception as e:
+                print(f"[WARN] yfinance attempt {attempt+1} fail: {e}")
+            
+            if attempt < 2:
+                time.sleep(1.5) # Wait before retry
 
-            report = f"### Fundamental Analysis for {ticker}\n\n"
+        report = f"### Fundamental Analysis for {ticker}\n\n"
             
             # Company Profile
             sector = info.get('sector', 'N/A')

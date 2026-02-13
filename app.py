@@ -149,12 +149,17 @@ if page == "📊 Market Analyzer":
                 st.metric("RSI (14)", f"{res['quant'].get('RSI (14)',0):.2f}")
                 st.metric("Volatility", f"{res['quant'].get('Annualized Volatility',0):.1%}")
                 
-            with c2:
+            with col2:
                 st.subheader("🏢 Fundamentals")
-                st.metric("Market Cap", f"${res['research'].get('Market Cap',0):,.0f}")
-                st.metric("Free Cash Flow", f"${res['research'].get('Free Cash Flow',0):,.0f}")
-                net_cash = res['research'].get('Cash',0) - res['research'].get('Total Debt',0)
-                st.metric("Net Cash", f"${net_cash:,.0f}")
+                mc = res['research'].get('Market Cap', 0)
+                fcf = res['research'].get('Free Cash Flow', 0)
+                cash = res['research'].get('Cash', 0)
+                debt = res['research'].get('Total Debt', 0)
+                net_cash = cash - debt
+                
+                st.metric("Market Cap", f"${mc:,.0f}" if mc > 0 else "N/A")
+                st.metric("Free Cash Flow", f"${fcf:,.0f}" if fcf != 0 else "N/A")
+                st.metric("Net Cash", f"${net_cash:,.0f}" if (cash or debt) else "N/A")
                 
             with c3:
                 st.subheader("📰 Sentiment (NLP)")
