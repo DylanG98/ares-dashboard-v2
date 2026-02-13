@@ -194,12 +194,18 @@ elif page == "⚙️ Bot Manager":
         # Add Ticker Section
         c3, c4 = st.columns([3, 1])
         with c3:
-            new_ticker = st.text_input("Add Ticker (Yahoo Symbol):", key="add_box").upper()
+            new_ticker_input = st.text_input("Add Ticker (Yahoo Symbol):", key="add_box", help="You can add multiple separated by commas (e.g. AAPL, TSLA)").upper()
         with c4:
              if st.button("➕ Add"):
-                if new_ticker:
-                    um.add_ticker(user_id_input, new_ticker)
-                    st.success(f"Added {new_ticker}")
+                if new_ticker_input:
+                    # Split by comma and strip whitespace
+                    tickers_to_add = [t.strip() for t in new_ticker_input.split(",") if t.strip()]
+                    
+                    for ticker in tickers_to_add:
+                        um.add_ticker(user_id_input, ticker)
+                        st.success(f"Added {ticker}")
+                    
+                    time.sleep(1) # Visual feedback
                     st.rerun()
 
         st.divider()
