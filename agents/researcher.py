@@ -43,44 +43,73 @@ class Researcher:
             # Balance Sheet Analysis
             report += "**Balance Sheet Highlights (Latest):**\n"
             
-            # Helper to safely get latest value
-            def get_latest(df, key, default=0):
-                if df.empty: return default
-                if key in df.index:
-                    return df.loc[key].iloc[0] # First column is usually latest
+            # Helper to safely get latest value from DF or Info
+            def get_financial_metric(dfs, keys, info_keys, default=0):
+                # 1. Try DataFrames (e.g. Balance Sheet, Cash Flow)
+                for df in dfs:
+                    if not df.empty:
+                        # Ensure columns are dates and sorted recent first
+                        try:
+                            df_sorted = df.T.sort_index(ascending=False).T
+                            latest_col = df_sorted.iloc[:, 0] # Series of latest data
+                            
+                            for key in keys:
+                                if key in latest_col.index:
+                                    val = latest_col[key]
+                                    if pd.notna(val) and val != 0:
+                                        return val
+                        except Exception:
+                            pass # Fallback if sorting fails
+
+                # 2. Try Info Dict
+                for k in info_keys:
+                    val = info.get(k, 0)
+                    if val and val != 0:
+                        return val
+                        
                 return default
 
-            # Try strict keys first, then loose logic or info fallback
-            total_debt = get_latest(bs, 'Total Debt')
-            if total_debt == 0:
-                 total_debt = info.get('totalDebt', 0)
-                 
-            total_cash = get_latest(bs, 'Cash And Cash Equivalents')
-            if total_cash == 0:
-                total_cash = info.get('totalCash', 0)
+            # Extraction
+            total_debt = get_financial_metric(
+                [bs], 
+                ['Total Debt', 'Long Term Debt'], 
+                ['totalDebt', 'longTermDebt']
+            )
+            
+            total_cash = get_financial_metric(
+                [bs], 
+                ['Cash And Cash Equivalents', 'Cash Cash Equivalents And Short Term Investments'], 
+                ['totalCash', 'cash']
+            )
+            
+            fcf = get_financial_metric(
+                [cf], 
+                ['Free Cash Flow', 'Free Cashflow'], 
+                ['freeCashflow']
+            )
+            
+            op_cash = get_financial_metric(
+                [cf], 
+                ['Operating Cash Flow', 'Total Cash From Operating Activities'], 
+                ['operatingCashflow']
+            )
 
+            # Assign to Data
             data["Total Debt"] = total_debt
             data["Cash"] = total_cash
+            data["Free Cash Flow"] = fcf
             
+            # Formatting Report
             if total_debt or total_cash:
                 report += f"- **Total Debt**: ${total_debt:,.0f}\n"
                 report += f"- **Cash & Equivalents**: ${total_cash:,.0f}\n"
+                if total_debt > 0 and total_cash > 0:
+                    net_cash = total_cash - total_debt
+                    report += f"- **Net Cash Position**: ${net_cash:,.0f}\n"
             else:
                 report += "*Balance Sheet data unavailable.*\n"
             
-            # Cash Flow Analysis
             report += "\n**Cash Flow Highlights (Latest):**\n"
-            
-            fcf = get_latest(cf, 'Free Cash Flow')
-            if fcf == 0:
-                fcf = info.get('freeCashflow', 0)
-                
-            op_cash = get_latest(cf, 'Operating Cash Flow')
-            if op_cash == 0:
-                op_cash = info.get('operatingCashflow', 0)
-            
-            data["Free Cash Flow"] = fcf
-            
             if fcf or op_cash:
                 report += f"- **Free Cash Flow**: ${fcf:,.0f}\n"
                 report += f"- **Operating Cash Flow**: ${op_cash:,.0f}\n"
