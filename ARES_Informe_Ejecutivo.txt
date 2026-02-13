@@ -1,0 +1,81 @@
+================================================================================
+A.R.E.S. (Automated Real-time Equity Sentinel)
+INFORME EJECUTIVO DE PROYECTO
+================================================================================
+
+1. VISIÓN GENERAL DEL PROYECTO
+   A.R.E.S. es una plataforma de inteligencia financiera híbrida diseñada para democratizar el acceso al análisis bursátil avanzado. Combina la potencia de un Dashboard Web interactivo con la inmediatez de un Bot de Telegram, permitiendo a los usuarios monitorear sus carteras de inversión en tiempo real, recibir alertas automáticas y realizar análisis cuantitativos complejos sin necesidad de intervención manual constante.
+
+   El sistema opera bajo una arquitectura "Always-On" (Siempre Activo), garantizando que la vigilancia de los mercados (Wall Street y Merval Argentina) se realice 24/7, incluso sin que el usuario tenga su computadora encendida.
+
+--------------------------------------------------------------------------------
+
+2. FUNCIONALIDADES CLAVE
+
+   A. Interfaz Web (Dashboard de Control)
+      - Visualización de datos financieros en tiempo real.
+      - Gráficos interactivos profesionales (Velas Japonesas, Bandas de Bollinger, Regresiones Lineales) impulsados por Plotly.
+      - Panel de Gestión de Bot: Permite a los usuarios administrar sus listas de seguimiento (Watchlists) de forma autónoma ingresando su ID de Telegram.
+      - Generación de reportes HTML detallados bajo demanda.
+
+   B. Asistente Móvil (Bot de Telegram)
+      - Comandos Interactivos:
+        * /price [TICKER]: Snapshot instantáneo de precio y señales técnicas (RSI).
+        * /analyze [TICKER]: Análisis profundo con veredicto de compra/venta y reporte adjunto.
+        * /track y /untrack: Gestión personalizada de favoritos desde el celular.
+      - Sincronización Bidireccional: Los cambios hechos en la Web se reflejan al instante en el móvil y viceversa.
+
+   C. Automatización Inteligente (The Sentinel)
+      - Scheduler Interno: Un "cronograma" digital que se ejecuta en segundo plano.
+      - Daily Briefing (09:00 AM): Envío automático de un resumen de mercado pre-apertura a todos los usuarios suscritos, personalizado según las acciones que cada uno sigue.
+      - Detección de Anomalías: Monitoreo constante de condiciones de sobrecompra/sobreventa (RSI).
+
+--------------------------------------------------------------------------------
+
+3. ARQUITECTURA TÉCNICA (STACK TECNOLÓGICO)
+
+   El núcleo de A.R.E.S. está construido íntegramente en Python, aprovechando su robusto ecosistema de ciencia de datos:
+
+   - Lenguaje Core: Python 3.x
+   - Framework Web: Streamlit (para la interfaz de usuario reactiva).
+   - Motor de Datos:
+     * Pandas & NumPy: Procesamiento vectorial de series temporales financieras.
+     * yfinance: Conexión con APIs de Yahoo Finance para datos de mercado globales y locales (BYMA).
+   - Análisis & Visualización:
+     * Plotly: Gráficos financieros dinámicos e interactivos.
+     * SciPy: Cálculos estadísticos avanzados (Frontera Eficiente, Optimizaciones de Portafolio).
+     * TextBlob: Procesamiento de Lenguaje Natural (NLP) para análisis de sentimiento de noticias.
+   - Mensajería & Concurrencia:
+     * python-telegram-bot: Gestión asíncrona (AsyncIO) de la comunicación con Telegram.
+     * Threading & Schedule: Ejecución paralela de procesos de fondo para garantizar que el Bot y la Web funcionen simultáneamente sin bloquearse.
+
+--------------------------------------------------------------------------------
+
+4. INFRAESTRUCTURA DE DESPLIEGUE (CLOUD ARCHITECTURE)
+
+   Para lograr la independencia del hardware local del usuario, A.R.E.S. utiliza una arquitectura moderna basada en la nube:
+
+   A. Repositorio de Código (La Bóveda)
+      - GitHub: Almacena el código fuente y gestiona el control de versiones. Actúa como la "Fuente de la Verdad" para el despliegue.
+
+   B. Servidor de Aplicaciones (El Motor)
+      - Streamlit Community Cloud: Plataforma PaaS (Platform as a Service) que despliega la aplicación directamente desde GitHub. Maneja la ejecución del código Python y la interfaz web pública.
+      - Gestión de Secretos: Las credenciales sensibles (Tokens de Telegram, APIs) se almacenan encriptadas en la configuración del servidor, no en el código.
+
+   C. Garantía de Disponibilidad (El Despertador)
+      - UptimeRobot: Servicio externo de monitoreo que realiza peticiones HTTP ("Pings") cada 5 minutos al servidor de A.R.E.S.
+      - Objetivo: Evitar que el servidor entre en modo "Sleep" por inactividad, asegurando que el Scheduler interno de las 09:00 AM se ejecute puntualmente.
+
+--------------------------------------------------------------------------------
+
+5. VALOR AGREGADO
+
+   A diferencia de las herramientas tradicionales, A.R.E.S. ofrece:
+   - Personalización: Cada usuario ve y recibe información solo de lo que le interesa.
+   - Profundidad Analítica: No solo muestra precios, interpreta tendencias y calcula riesgos matemáticos.
+   - Accesibilidad: Todo el poder de una terminal financiera, simplificado en una app de chat (Telegram).
+   - Costo Cero de Mantenimiento: Gracias a su arquitectura Serverless/Cloud gratuita, no requiere servidores dedicados ni PC encendida.
+
+================================================================================
+FIN DEL INFORME
+================================================================================

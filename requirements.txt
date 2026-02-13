@@ -12,3 +12,4 @@ toml
 python-telegram-bot
 plotly
 schedule
+google-generativeai
