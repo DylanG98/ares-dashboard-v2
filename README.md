@@ -6,6 +6,8 @@
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
 ![AI](https://img.shields.io/badge/AI-Gemini%201.5%20Flash-orange)
 
+👉 **Live Dashboard:** [Click Here to Open A.R.E.S.](https://ares-dashboard-v2.streamlit.app/)
+
 ---
 
 ## 🚀 Key Features
