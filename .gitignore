@@ -34,6 +34,9 @@ data/raw/
 reports/
 output/
 config.json
+users.json
+debug_*.py
+test_*.py
 temp_dashboard/
 logs/
 .DS_Store
