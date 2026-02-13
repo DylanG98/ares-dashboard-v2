@@ -91,8 +91,15 @@ if page == "📊 Market Analyzer":
     
     col1, col2 = st.columns([1, 4])
     with col1:
-        ticker = st.text_input("Ticker Symbol", value="AAPL").upper()
-        analyze_btn = st.button("Run Analysis", type="primary")
+        # Combined Input & Example
+        c_input, c_ex = st.columns([2, 1])
+        with c_input:
+            ticker = st.text_input("Enter Ticker:", placeholder="e.g. AAPL, GGAL.BA", label_visibility="collapsed").upper()
+        with c_ex:
+            st.caption("**Popular:** `AAPL` `TSLA` `NVDA` `MELI` `GGAL.BA` `YPFD.BA` `VIST` `SPY` `BTC-USD`")
+        
+        # Analyze Button
+        analyze_btn = st.button("🔍 Analyze Asset", use_container_width=True)
         
     if analyze_btn:
         res = run_analysis_ui(ticker)
@@ -165,7 +172,11 @@ elif page == "⚙️ Bot Manager":
     with col_id:
         user_id_input = st.text_input("telegram_id", placeholder="e.g. 12345678", label_visibility="collapsed")
     with col_help:
-         st.caption("👉 **Start here:** [Message @AresMarket_bot](https://t.me/AresMarket_bot) to get your ID.")
+         st.markdown("""
+         **1️⃣ Get your ID:** [Message @userinfobot](https://t.me/userinfobot)
+         
+         **2️⃣ Start App Bot:** [Message @AresMarket_bot](https://t.me/AresMarket_bot)
+         """)
 
     if user_id_input:
         from utils.user_manager import UserManager
